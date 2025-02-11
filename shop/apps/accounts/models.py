@@ -42,6 +42,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_admin = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    verification_code = models.CharField(max_length=6, null=True, blank=True)
+    is_verified = models.BooleanField(default=False)
+    password_reset_token = models.CharField(max_length=6, null=True, blank=True)
+    password_reset_token_created = models.DateTimeField(null=True, blank=True)
 
     objects = CustomUserManager()
 
