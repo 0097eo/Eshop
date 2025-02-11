@@ -10,11 +10,17 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ('created_at', 'updated_at', 'is_verified')
 
     def validate_email(self, value):
-        request_user = self.context.get('request').user
-
-        if User.objects.filter(email=value).exclude(id=request_user.id).exists():
-            raise serializers.ValidationError("This email address is already in use.")
-
+        request = self.context.get('request')
+    
+        if request and request.user and request.user.is_authenticated:
+        # For existing users (updating profile)
+            if User.objects.filter(email=value).exclude(id=request.user.id).exists():
+                raise serializers.ValidationError("This email address is already in use.")
+        else:
+        # For new users (signing up)
+            if User.objects.filter(email=value).exists():
+                raise serializers.ValidationError("This email address is already in use.")
+    
         return value
 
     def create(self, validated_data):
