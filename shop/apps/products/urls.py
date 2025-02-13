@@ -6,6 +6,7 @@ urlpatterns = [
     path('categories/<int:pk>/', views.CategoryDetailView.as_view(), name='category-detail'),
     path('products/', views.ProductListCreateView.as_view(), name='product-list'),
     path('products/<int:pk>/', views.ProductDetailView.as_view(), name='product-detail'),
+    path('products/bulk-import/', views.BulkProductImportView.as_view(), name='product-bulk-import'),
     path('products/<int:product_pk>/reviews/', views.ProductReviewListCreateView.as_view(), name='product-review-list'),
     path('products/<int:product_pk>/reviews/<int:review_pk>/', views.ProductReviewDetailView.as_view(), name='product-review-detail'),
     path('wishlist/', views.WishListView.as_view(), name='wishlist'),

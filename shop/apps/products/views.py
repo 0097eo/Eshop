@@ -12,7 +12,15 @@ from .serializers import (
     ProductPagination
 )
 from ..accounts.permissions import IsAdmin, IsCustomer
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+import cloudinary
+import cloudinary.uploader
+from django.conf import settings
+import csv
+import json
+import requests
+from io import TextIOWrapper
+from django.db import transaction
 
 
 
@@ -155,6 +163,194 @@ class ProductDetailView(APIView):
         product = self.get_object(pk)
         product.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+# Bulk Product import from CSV or JSON format
+class BulkProductImportView(APIView):
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
+    permission_classes = [IsAdmin]
+
+    def _upload_to_cloudinary(self, image_url):
+        """Upload image to Cloudinary either from URL or file"""
+        try:
+            if isinstance(image_url, str):
+                upload_result = cloudinary.uploader.upload(
+                    image_url,
+                    folder="products/", 
+                    use_filename=True,    
+                    unique_filename=True, 
+                    overwrite=False,     
+                    resource_type="auto"  
+                )
+                return upload_result.get('secure_url')
+            else:
+                # Handle file upload if image_url is actually a file
+                upload_result = cloudinary.uploader.upload(
+                    image_url,
+                    folder="products/",
+                    use_filename=True,
+                    unique_filename=True,
+                    overwrite=False,
+                    resource_type="auto"
+                )
+                return upload_result.get('secure_url')
+        except Exception as e:
+            raise ValueError(f"Cloudinary upload failed: {str(e)}")
+
+    def _validate_image_url(self, url):
+        """Validate if the URL points to an image"""
+        try:
+            response = requests.head(url, timeout=5)
+            content_type = response.headers.get('content-type', '')
+            return content_type.startswith('image/')
+        except:
+            return False
+
+    def _process_csv(self, file):
+        results = {
+            'successful': 0,
+            'failed': 0,
+            'errors': []
+        }
+
+        csv_file = TextIOWrapper(file, encoding='utf-8')
+        reader = csv.DictReader(csv_file)
+        
+        with transaction.atomic():
+            for row_number, row in enumerate(reader, start=2):
+                try:
+                    category = None
+                    if 'category' in row:
+                        category, _ = Category.objects.get_or_create(name=row['category'])
+
+                    image_url = None
+                    if 'image_url' in row and row['image_url']:
+                        if self._validate_image_url(row['image_url']):
+                            image_url = self._upload_to_cloudinary(row['image_url'])
+                        else:
+                            results['errors'].append(f"Row {row_number}: Invalid image URL")
+
+                    product_data = {
+                        'name': row['name'],
+                        'description': row['description'],
+                        'price': float(row['price']),
+                        'category': category.id if category else None,
+                        'primary_material': row.get('primary_material', ''),
+                        'condition': row.get('condition', ''),
+                        'is_available': row.get('is_available', 'true').lower() == 'true'
+                    }
+
+                    if image_url:
+                        product_data['image'] = image_url
+
+                    serializer = ProductSerializer(data=product_data)
+                    if serializer.is_valid():
+                        serializer.save()
+                        results['successful'] += 1
+                    else:
+                        results['failed'] += 1
+                        results['errors'].append(f"Row {row_number}: {serializer.errors}")
+
+                except Exception as e:
+                    results['failed'] += 1
+                    results['errors'].append(f"Row {row_number}: {str(e)}")
+
+        return results
+
+    def _process_json(self, file):
+        results = {
+            'successful': 0,
+            'failed': 0,
+            'errors': []
+        }
+
+        try:
+            products_data = json.load(file)
+            
+            with transaction.atomic():
+                for index, product_data in enumerate(products_data, start=1):
+                    try:
+                        if 'category' in product_data:
+                            category, _ = Category.objects.get_or_create(
+                                name=product_data['category']
+                            )
+                            product_data['category'] = category.id
+
+                        if 'image_url' in product_data and product_data['image_url']:
+                            if self._validate_image_url(product_data['image_url']):
+                                image_url = self._upload_to_cloudinary(product_data['image_url'])
+                                if image_url:
+                                    product_data['image'] = image_url
+                            else:
+                                results['errors'].append(f"Product {index}: Invalid image URL")
+                            
+                            # Remove image_url from data as it's not part of the model
+                            del product_data['image_url']
+
+                        serializer = ProductSerializer(data=product_data)
+                        if serializer.is_valid():
+                            serializer.save()
+                            results['successful'] += 1
+                        else:
+                            results['failed'] += 1
+                            results['errors'].append(f"Product {index}: {serializer.errors}")
+
+                    except Exception as e:
+                        results['failed'] += 1
+                        results['errors'].append(f"Product {index}: {str(e)}")
+
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON format: {str(e)}")
+
+        return results
+
+    def post(self, request):
+        if not all([
+            settings.CLOUDINARY_STORAGE.get('CLOUD_NAME'),
+            settings.CLOUDINARY_STORAGE.get('API_KEY'),
+            settings.CLOUDINARY_STORAGE.get('API_SECRET')
+        ]):
+            return Response(
+                {'error': 'Cloudinary configuration is incomplete'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        file = request.FILES.get('file')
+        if not file:
+            return Response(
+                {'error': 'No file provided'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Determine file type from extension
+        file_name = file.name.lower()
+        results = {
+            'successful': 0,
+            'failed': 0,
+            'errors': []
+        }
+
+        try:
+            if file_name.endswith('.csv'):
+                results = self._process_csv(file)
+            elif file_name.endswith('.json'):
+                results = self._process_json(file)
+            else:
+                return Response(
+                    {'error': 'Unsupported file format. Please use CSV or JSON'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            return Response({
+                'message': 'Import completed',
+                'results': results
+            }, status=status.HTTP_201_CREATED if results['successful'] > 0 else status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
 
 # Product Review Views
 class ProductReviewListCreateView(APIView):
