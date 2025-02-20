@@ -20,7 +20,7 @@ class BaseTestCase(TestCase):
         return User.objects.create_user(email=email, password=password)
 
 class SignupViewTests(BaseTestCase):
-    @patch('apps.accounts.utils.send_verification_email')
+    @patch('apps.accounts.views.send_verification_email')
     def test_signup_success(self, mock_send_email):
         mock_send_email.return_value = None
         response = self.client.post(reverse('signup'), self.user_data)
@@ -29,6 +29,7 @@ class SignupViewTests(BaseTestCase):
         self.assertTrue(User.objects.filter(email='test@example.com').exists())
         self.assertIn('message', response.data)
         self.assertIn('user', response.data)
+        mock_send_email.assert_called_once()
         
 
     def test_signup_failure(self):
@@ -71,7 +72,7 @@ class VerifyEmailViewTests(BaseTestCase):
         self.assertIn('message', response.data)
 
 class ResendVerificationViewTests(BaseTestCase):
-    @patch('apps.accounts.utils.send_verification_email')
+    @patch('apps.accounts.views.send_verification_email')
     def test_resend_verification_success(self, mock_send_email):
         user = self.create_user()
         
@@ -81,6 +82,7 @@ class ResendVerificationViewTests(BaseTestCase):
         self.assertIn('message', response.data)
         user.refresh_from_db()
         self.assertIsNotNone(user.verification_code)
+        mock_send_email.assert_called_once()
         
 
     def test_resend_verification_already_verified(self):
@@ -94,7 +96,7 @@ class ResendVerificationViewTests(BaseTestCase):
         self.assertIn('message', response.data)
 
 class RequestPasswordResetViewTests(BaseTestCase):
-    @patch('apps.accounts.utils.send_password_reset_email')
+    @patch('apps.accounts.views.send_password_reset_email')
     def test_request_password_reset_success(self, mock_send_email):
         mock_send_email.return_value = None
         user = self.create_user()
@@ -105,6 +107,7 @@ class RequestPasswordResetViewTests(BaseTestCase):
         self.assertIn('message', response.data)
         user.refresh_from_db()
         self.assertIsNotNone(user.password_reset_token)
+        mock_send_email.assert_called_once()
         
 
     def test_request_password_reset_user_not_found(self):
