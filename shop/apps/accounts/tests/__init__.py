@@ -1,1 +1,2 @@
 from .test_models import UserModelTest
+from .test_views import SignupViewTests, VerifyEmailViewTests, ResendVerificationViewTests, RequestPasswordResetViewTests, ResetPasswordViewTests, LoginViewTests
