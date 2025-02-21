@@ -1,0 +1,2 @@
+from .test_models import CategoryModelTest, ProductModelTest, ProductReviewModelTest, WishListModelTest
+from .test_views import CategoryViewsTest, ProductViewsTest, ProductReviewViewsTest, WishListViewsTest
