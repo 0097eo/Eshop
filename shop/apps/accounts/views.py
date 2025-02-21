@@ -193,7 +193,8 @@ class LoginView(APIView):
         user = authenticate(email=email, password=password)
 
         if user:
-            if not user.is_verified:
+            # Skip verification check for admin users
+            if not user.is_admin and not user.is_verified:
                 return Response({
                     'detail': 'Email not verified.'
                     }, status=status.HTTP_403_FORBIDDEN)
