@@ -11,8 +11,8 @@ class CartItemInline(admin.TabularInline):
 
     def total_price(self, obj):
         if obj.product and obj.quantity:
-            return f"${obj.product.price * obj.quantity:.2f}"
-        return "$0.00"
+            return f"Ksh{obj.product.price * obj.quantity:.2f}"
+        return "Ksh0.00"
     total_price.short_description = 'Total Price'
 
 @admin.register(Cart)
@@ -39,7 +39,7 @@ class CartAdmin(admin.ModelAdmin):
 
     def total_value(self, obj):
         total = sum(item.quantity * item.product.price for item in obj.items.all())
-        return f"${total:.2f}"
+        return f"Ksh{total:.2f}"
     total_value.short_description = 'Total Value'
 
     def cart_status(self, obj):
@@ -69,7 +69,7 @@ class CartItemAdmin(admin.ModelAdmin):
     cart_user.short_description = 'User'
 
     def item_total(self, obj):
-        return f"${obj.product.price * obj.quantity:.2f}"
+        return f"Ksh{obj.product.price * obj.quantity:.2f}"
     item_total.short_description = 'Total Price'
 
     def added_at(self, obj):

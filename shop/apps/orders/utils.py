@@ -9,7 +9,7 @@ def send_order_confirmation_email(order):
 
         Order Details:
         Order Number: {order.id}
-        Total Amount: ${order.total_price}
+        Total Amount: Ksh{order.total_price}
         Shipping Address: {order.shipping_address}
 
         Order Status: {order.status}
@@ -39,7 +39,7 @@ def send_order_status_update_email(order):
         Order Details:
         Order Number: {order.id}
         New Status: {order.status}
-        Total Amount: ${order.total_price}
+        Total Amount: Ksh{order.total_price}
         Shipping Address: {order.shipping_address}
 
         Thank you for shopping with us!
