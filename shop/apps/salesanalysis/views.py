@@ -11,9 +11,9 @@ from rest_framework.views import APIView
 from .models import SalesRecord
 
 class SalesListView(generics.ListAPIView):
+    permission_classes = [IsAdmin] 
     queryset = SalesRecord.objects.all()
     serializer_class = SalesRecordSerializer
-    permission_classes = [IsAdmin] 
 
 class SalesReportView(APIView):
     permission_classes = [IsAdmin]
