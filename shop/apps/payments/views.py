@@ -21,15 +21,16 @@ class StripePaymentView(APIView):
     permission_classes = [IsCustomer]
     def post(self, request):
         order_id = request.data.get("order_id")
-        amount = request.data.get("amount")
         user = request.user  # Ensure authentication
 
         order = get_object_or_404(Order, id=order_id)
+        amount = order.total_price
+        
 
         try:
             intent = stripe.PaymentIntent.create(
                 amount=int(float(amount) * 100),  # Convert to cents
-                currency="usd",
+                currency="kes",
                 payment_method_types=["card"],
             )
 
@@ -42,7 +43,7 @@ class StripePaymentView(APIView):
                 status="pending",
             )
 
-            return Response({"client_secret": intent.client_secret}, status=status.HTTP_200_OK)
+            return Response({"client_secret": intent.client_secret, "amount":amount}, status=status.HTTP_200_OK)
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -61,10 +62,10 @@ class MpesaPaymentView(APIView):
             return Response({"error": "order_id is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         phone = request.data.get("phone")
-        amount = request.data.get("amount")
         user = request.user  # Ensure authentication
 
         order = get_object_or_404(Order, id=order_id)
+        amount = int(float(order.total_price))
 
         access_token = self.get_access_token()
         if not access_token:
@@ -105,7 +106,7 @@ class MpesaPaymentView(APIView):
                 status="pending",
             )
 
-            return Response({"message": "Payment initiated", "transaction_id": transaction_id}, status=status.HTTP_200_OK)
+            return Response({"message": "Payment initiated", "transaction_id": transaction_id, "amount": amount}, status=status.HTTP_200_OK)
 
         return Response({"error": "Failed to initiate payment"}, status=status.HTTP_400_BAD_REQUEST)
     
