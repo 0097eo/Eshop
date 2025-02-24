@@ -17,6 +17,7 @@ cloudinary = "*"
 django-cloudinary-storage = "*"
 stripe = "*"
 python-dotenv = "*"
+base64 = "*"
 
 [dev-packages]
 
