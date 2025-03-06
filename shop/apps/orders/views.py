@@ -2,10 +2,11 @@ from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from ..accounts.permissions import IsAdmin
 from django.shortcuts import get_object_or_404
 from .models import Order
 from .serializers import OrderSerializer, CreateOrderFromCartSerializer
-from .utils import send_order_status_update_email, send_shipping_confirmation_email
+from .utils import send_order_status_update_email, send_shipping_confirmation_email, send_order_confirmation_email
 
 class OrderListCreateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -28,6 +29,7 @@ class OrderCreateFromCartView(APIView):
         )
         if serializer.is_valid():
             order = serializer.save()
+            send_order_confirmation_email(order)
             return Response(
                 OrderSerializer(order).data,
                 status=status.HTTP_201_CREATED
@@ -66,12 +68,14 @@ class OrderAddressUpdateView(APIView):
         
         order.save()
         
+        send_order_status_update_email(order)
+        
         serializer = OrderSerializer(order)
         return Response(serializer.data)
     
 
 class OrderStatusUpdateView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdmin]
     
     def put(self, request, pk):
         """Update order status and send email notification"""
