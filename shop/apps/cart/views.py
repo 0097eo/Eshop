@@ -21,10 +21,10 @@ class CartView(APIView):
         serializer = CartSerializer(cart)
         return Response(serializer.data)
     
-    @transaction.atomic
+    @transaction.non_atomic_requests
     def post(self, request):
         product_id = request.data.get('product_id')
-        quantity = int(request.data.get('quantity', 1))
+        quantity = int(request.data.get('quantity'))
 
         #validate product
         product = get_object_or_404(Product, id=product_id)
