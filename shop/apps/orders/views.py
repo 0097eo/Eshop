@@ -5,8 +5,9 @@ from rest_framework.permissions import IsAuthenticated
 from ..accounts.permissions import IsAdmin
 from django.shortcuts import get_object_or_404
 from .models import Order
+import copy
 from .serializers import OrderSerializer, CreateOrderFromCartSerializer
-from .utils import send_order_status_update_email, send_shipping_confirmation_email, send_order_confirmation_email
+from .utils import send_order_status_update_email, send_shipping_confirmation_email, send_order_confirmation_email, send_order_address_update_email
 
 class OrderListCreateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -60,15 +61,23 @@ class OrderAddressUpdateView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        if 'shipping_address' in request.data:
+        # Store old addresses for reference in email
+        old_shipping_address = None
+        old_billing_address = None
+        
+        if 'shipping_address' in request.data and order.shipping_address:
+            old_shipping_address = copy.deepcopy(order.shipping_address)
             order.shipping_address = request.data['shipping_address']
         
-        if 'billing_address' in request.data:
+        if 'billing_address' in request.data and order.billing_address:
+            old_billing_address = copy.deepcopy(order.billing_address)
             order.billing_address = request.data['billing_address']
         
         order.save()
         
-        send_order_status_update_email(order)
+        # Send address update email if shipping address was updated
+        if old_shipping_address:
+            send_order_address_update_email(order, old_shipping_address)
         
         serializer = OrderSerializer(order)
         return Response(serializer.data)

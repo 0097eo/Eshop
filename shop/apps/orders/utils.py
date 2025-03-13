@@ -104,3 +104,35 @@ def send_shipping_confirmation_email(order, tracking_number=None):
     except Exception as e:
         print(f'Error sending shipping confirmation email: {e}')
         return False
+    
+def send_order_address_update_email(order, old_address=None):
+    """Send notification email when customer updates their order address"""
+    subject = f'Address Updated - Order #{order.id}'
+    
+    # HTML version of the email
+    context = {
+        'order': order,
+        'old_address': old_address,
+        'company_name': 'Eshop',
+        'support_email': 'support@eshop.com',
+        'currency': 'Ksh'
+    }
+    
+    html_message = render_to_string('emails/order_address_update_email.html', context)
+    
+    # Plain text version of the email
+    plain_message = strip_tags(html_message)
+    
+    try:
+        send_mail(
+            subject,
+            plain_message,
+            settings.EMAIL_HOST_USER,
+            [order.user.email],
+            fail_silently=False,
+            html_message=html_message,
+        )
+        return True
+    except Exception as e:
+        print(f'Error sending order address update email: {e}')
+        return False

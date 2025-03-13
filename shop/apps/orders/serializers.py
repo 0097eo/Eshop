@@ -13,17 +13,18 @@ class OrderItemSerializer(serializers.ModelSerializer):
         source='price',
         read_only=True
     )
+    product_image = serializers.ImageField(source='product.image', read_only=True)
     subtotal = serializers.DecimalField(
         source='get_subtotal',
         max_digits=10,
         decimal_places=2,
         read_only=True
     )
-
+    
     class Meta:
         model = OrderItem
-        fields = ['id', 'product', 'product_name', 'product_price', 'quantity', 'subtotal']
-        read_only_fields = ['id', 'product_price']
+        fields = ['id', 'product', 'product_name', 'product_price', 'product_image', 'quantity', 'subtotal']
+        read_only_fields = ['id', 'product_price', 'product_image']
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)

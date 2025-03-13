@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Address Updated - Order #{{ order.id }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .container {
+            padding: 20px;
+            border: 1px solid #dddddd;
+            border-radius: 5px;
+        }
+        .header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eeeeee;
+        }
+        .content {
+            padding: 20px 0;
+        }
+        .order-details {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .address-box {
+            border: 1px solid #eeeeee;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+        .address-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555555;
+        }
+        .highlight {
+            background-color: #f5f5f5;
+        }
+        .new-address {
+            background-color: #ebf7eb;
+            border-left: 4px solid #4CAF50;
+        }
+        .thank-you {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            color: #4CAF50;
+        }
+        .footer {
+            font-size: 12px;
+            color: #777777;
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #eeeeee;
+        }
+        .button {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Address Updated</h2>
+        </div>
+        <div class="content">
+            <p>Hello {{ order.user.username|default:"Valued Customer" }},</p>
+            <p>This email confirms that the shipping address for your order has been successfully updated.</p>
+            
+            <div class="order-details">
+                <h3>Order #{{ order.id }}</h3>
+                <p><strong>Order Date:</strong> {{ order.created_at|date:"F j, Y" }}</p>
+                <p><strong>Order Status:</strong> {{ order.get_status_display }}</p>
+                <p><strong>Payment Method:</strong> {{ order.payment_method }}</p>
+                <p><strong>Total Amount:</strong> {{ currency }}{{ order.total_price }}</p>
+            </div>
+            
+            <h3>Address Change</h3>
+            {% if old_address %}
+            <div class="address-box highlight">
+                <div class="address-title">Previous Address</div>
+                {{ old_address.recipient_name }}<br>
+                {{ old_address.street_address }}<br>
+                {% if old_address.apartment %}{{ old_address.apartment }}<br>{% endif %}
+                {{ old_address.city }}, {{ old_address.state }} {{ old_address.postal_code }}<br>
+                {{ old_address.country }}<br>
+                {% if old_address.phone %}Phone: {{ old_address.phone }}{% endif %}
+            </div>
+            {% endif %}
+            
+            <div class="address-box new-address">
+                <div class="address-title">New Shipping Address</div>
+                {{ order.shipping_address.recipient_name }}<br>
+                {{ order.shipping_address.street_address }}<br>
+                {% if order.shipping_address.apartment %}{{ order.shipping_address.apartment }}<br>{% endif %}
+                {{ order.shipping_address.city }}, {{ order.shipping_address.state }} {{ order.shipping_address.postal_code }}<br>
+                {{ order.shipping_address.country }}<br>
+                {% if order.shipping_address.phone %}Phone: {{ order.shipping_address.phone }}{% endif %}
+            </div>
+            
+            <p><strong>Note:</strong> If this change was not made by you or if you have any questions about this address update, please contact our customer support team immediately.</p>
+            
+            <div style="text-align: center; margin: 20px 0;">
+                <a href="#" class="button">View Order Details</a>
+            </div>
+            
+            <div class="thank-you">
+                Thank you for shopping with us!
+            </div>
+        </div>
+        <div class="footer">
+            <p>&copy; {{ company_name }}. All rights reserved.</p>
+            <p>If you need any assistance, please contact us at <a href="mailto:{{ support_email }}">{{ support_email }}</a></p>
+        </div>
+    </div>
+</body>
+</html>
