@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404
 from .models import Order
 import copy
 from .serializers import OrderSerializer, CreateOrderFromCartSerializer
-from .utils import send_order_status_update_email, send_shipping_confirmation_email, send_order_confirmation_email, send_order_address_update_email
+from .utils import send_order_status_update_email, send_shipping_confirmation_email, send_order_confirmation_email, send_order_address_update_email, send_order_cancellation_email
 
 class OrderListCreateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -122,7 +122,7 @@ class OrderDeleteView(APIView):
     permission_classes = [IsAuthenticated]
     
     def delete(self, request, pk):
-        """Delete an order (only if it's in PENDING status)"""
+        """Delete an order (only if it's in PENDING status) and send cancellation email"""
         order = get_object_or_404(Order, pk=pk, user=request.user)
         
         if order.status != 'PENDING':
@@ -131,5 +131,19 @@ class OrderDeleteView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        email_sent = send_order_cancellation_email(order)
+        
+        # Delete the order
         order.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        
+        # Return appropriate response
+        if email_sent:
+            return Response(
+                {'message': 'Order cancelled successfully and confirmation email sent'},
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(
+                {'message': 'Order cancelled successfully but confirmation email failed to send'},
+                status=status.HTTP_200_OK
+            )
