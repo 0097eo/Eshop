@@ -357,7 +357,8 @@ class ProductReviewListCreateView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get(self, request, product_pk):
-        reviews = ProductReview.objects.filter(product_id=product_pk)
+        product = get_object_or_404(Product, pk=product_pk)
+        reviews = ProductReview.objects.filter(product=product)
         serializer = ProductReviewSerializer(reviews, many=True)
         return Response(serializer.data)
 
@@ -367,14 +368,20 @@ class ProductReviewListCreateView(APIView):
         # Check if user has already reviewed this product
         if ProductReview.objects.filter(product=product, user=request.user).exists():
             return Response(
-                {'message': 'You have already reviewed this product'},
+                {'message': 'You have already reviewed this product. Please edit your existing review instead.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
+        
+        # Validate the incoming data
         serializer = ProductReviewSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(user=request.user, product=product)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            # Save with the user and product
+            review = serializer.save(user=request.user, product=product)
+            
+            # Return the complete serialized review
+            result = ProductReviewSerializer(review).data
+            return Response(result, status=status.HTTP_201_CREATED)
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ProductReviewDetailView(APIView):
@@ -390,11 +397,18 @@ class ProductReviewDetailView(APIView):
 
     def put(self, request, product_pk, review_pk):
         review = self.get_object(product_pk, review_pk)
+        
+        # Check if the user owns this review or is staff
         if review.user != request.user and not request.user.is_staff:
-            return Response(status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {'message': 'You do not have permission to edit this review'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
             
-        serializer = ProductReviewSerializer(review, data=request.data)
+        # Pass the existing review instance to the serializer
+        serializer = ProductReviewSerializer(review, data=request.data, partial=True)
         if serializer.is_valid():
+            # Save will maintain the existing user and product associations
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -402,7 +416,10 @@ class ProductReviewDetailView(APIView):
     def delete(self, request, product_pk, review_pk):
         review = self.get_object(product_pk, review_pk)
         if review.user != request.user and not request.user.is_staff:
-            return Response(status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {'message': 'You do not have permission to delete this review'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
             
         review.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -450,6 +467,23 @@ class WishListView(APIView):
         except Product.DoesNotExist:
             return Response(
                 {'message': 'Product not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+    def delete(self, request):
+        """
+        Clear all products from the user's wishlist.
+        """
+        try:
+            wishlist = WishList.objects.get(user=request.user)
+            wishlist.products.clear()  # Remove all products from the wishlist
+            return Response(
+                {'message': 'Wishlist cleared successfully'},
+                status=status.HTTP_204_NO_CONTENT
+            )
+        except WishList.DoesNotExist:
+            return Response(
+                {'message': 'Wishlist not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
 
