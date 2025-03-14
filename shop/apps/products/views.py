@@ -406,6 +406,15 @@ class ProductReviewDetailView(APIView):
             
         review.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class UserReviewsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        # Get all reviews by the current user
+        reviews = ProductReview.objects.filter(user=request.user)
+        serializer = ProductReviewSerializer(reviews, many=True)
+        return Response(serializer.data)
 
 # Wishlist Views
 class WishListView(APIView):
