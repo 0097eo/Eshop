@@ -9,4 +9,5 @@ urlpatterns = [
      path('resend-verification/', views.ResendVerificationView.as_view(), name='resend-verification'),
     path('request-password-reset/', views.RequestPasswordResetView.as_view(), name='request-password-reset'),
     path('reset-password/', views.ResetPasswordView.as_view(), name='reset-password'),
+    path('users/', views.UserListView.as_view(), name='user-list')
 ]

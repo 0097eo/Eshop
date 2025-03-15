@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from .models import User
+from .permissions import IsAdmin
 from .serializers import UserSerializer
 from .utils import send_verification_email, send_password_reset_email
 import secrets
@@ -228,3 +229,11 @@ class ProfileView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class UserListView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]  # Only admins can access
+
+    def get(self, request):
+        """Fetch all users (admin-only)"""
+        users = User.objects.all()  # Retrieve all users
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
