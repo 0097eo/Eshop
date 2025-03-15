@@ -13,8 +13,11 @@ class OrderListCreateView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
-        """List all orders for the authenticated user"""
-        orders = Order.objects.filter(user=request.user)
+        """List all orders for the authenticated user, or all orders if user is admin"""
+        if IsAdmin().has_permission(request, self):
+            orders = Order.objects.all()
+        else:
+            orders = Order.objects.filter(user=request.user)
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data)
     
@@ -42,8 +45,11 @@ class OrderDetailView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request, pk):
-        """Retrieve a specific order"""
-        order = get_object_or_404(Order, pk=pk, user=request.user)
+        """Retrieve a specific order, admins can see any order"""
+        if IsAdmin().has_permission(request, self):
+            order = get_object_or_404(Order, pk=pk)
+        else:
+            order = get_object_or_404(Order, pk=pk, user=request.user)
         serializer = OrderSerializer(order)
         return Response(serializer.data)
 
@@ -52,8 +58,11 @@ class OrderAddressUpdateView(APIView):
     permission_classes = [IsAuthenticated]
     
     def put(self, request, pk):
-        """Update order shipping and billing addresses"""
-        order = get_object_or_404(Order, pk=pk, user=request.user)
+        """Update order shipping and billing addresses, admins can update any order"""
+        if IsAdmin().has_permission(request, self):
+            order = get_object_or_404(Order, pk=pk)
+        else:
+            order = get_object_or_404(Order, pk=pk, user=request.user)
         
         if order.status != 'PENDING':
             return Response(
@@ -122,8 +131,11 @@ class OrderDeleteView(APIView):
     permission_classes = [IsAuthenticated]
     
     def delete(self, request, pk):
-        """Delete an order (only if it's in PENDING status) and send cancellation email"""
-        order = get_object_or_404(Order, pk=pk, user=request.user)
+        """Delete an order (only if it's in PENDING status), admins can delete any order"""
+        if IsAdmin().has_permission(request, self):
+            order = get_object_or_404(Order, pk=pk)
+        else:
+            order = get_object_or_404(Order, pk=pk, user=request.user)
         
         if order.status != 'PENDING':
             return Response(
