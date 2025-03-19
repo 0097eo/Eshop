@@ -1,7 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, permissions
-from django.db.models import Sum, Count, Avg, F, Q
+from rest_framework import status
+from ..accounts.permissions import IsAdmin
+from django.db.models import Sum, Avg, F
 from django.utils import timezone
 from datetime import datetime, timedelta
 from .models import DailySales, ProductPerformance, CategoryPerformance, CustomerInsight, SalesReport
@@ -14,7 +15,7 @@ from ..products.models import Product, Category
 from ..orders.models import Order, OrderItem
 
 class DailySalesListView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdmin]
     
     def get(self, request):
         daily_sales = DailySales.objects.all().order_by('-date')
@@ -30,7 +31,7 @@ class DailySalesListView(APIView):
 
 
 class DailySalesDetailView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdmin]
     
     def get_object(self, pk):
         try:
@@ -64,7 +65,7 @@ class DailySalesDetailView(APIView):
 
 
 class DailySalesReportView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdmin]
     
     def get(self, request):
         """Generate daily sales report for the given date range"""
@@ -138,7 +139,7 @@ class DailySalesReportView(APIView):
 
 
 class ProductPerformanceListView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdmin]
     
     def get(self, request):
         product_performance = ProductPerformance.objects.all().order_by('-date')
@@ -154,7 +155,7 @@ class ProductPerformanceListView(APIView):
 
 
 class ProductPerformanceDetailView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdmin]
     
     def get_object(self, pk):
         try:
@@ -188,7 +189,7 @@ class ProductPerformanceDetailView(APIView):
 
 
 class ProductPerformanceReportView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdmin]
     
     def get(self, request):
         """Generate product performance report for the given date range"""
@@ -263,7 +264,7 @@ class ProductPerformanceReportView(APIView):
 
 
 class CategoryPerformanceListView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdmin]
     
     def get(self, request):
         category_performance = CategoryPerformance.objects.all().order_by('-date')
@@ -279,7 +280,7 @@ class CategoryPerformanceListView(APIView):
 
 
 class CategoryPerformanceDetailView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdmin]
     
     def get_object(self, pk):
         try:
@@ -313,7 +314,7 @@ class CategoryPerformanceDetailView(APIView):
 
 
 class CategoryPerformanceReportView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdmin]
     
     def get(self, request):
         """Generate category performance report for the given date range"""
@@ -376,7 +377,7 @@ class CategoryPerformanceReportView(APIView):
 
 
 class CustomerInsightListView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdmin]
     
     def get(self, request):
         customer_insights = CustomerInsight.objects.all().order_by('-total_spent')
@@ -392,7 +393,7 @@ class CustomerInsightListView(APIView):
 
 
 class CustomerInsightDetailView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdmin]
     
     def get_object(self, pk):
         try:
@@ -426,7 +427,7 @@ class CustomerInsightDetailView(APIView):
 
 
 class CustomerInsightGeneratorView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdmin]
     
     def get(self, request):
         """Generate customer insights for all users"""
@@ -492,7 +493,7 @@ class CustomerInsightGeneratorView(APIView):
 
 
 class SalesReportListView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdmin]
     
     def get(self, request):
         sales_reports = SalesReport.objects.all().order_by('-generated_at')
@@ -508,7 +509,7 @@ class SalesReportListView(APIView):
 
 
 class SalesReportDetailView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdmin]
     
     def get_object(self, pk):
         try:
@@ -542,7 +543,7 @@ class SalesReportDetailView(APIView):
 
 
 class SalesReportGeneratorView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdmin]
     
     def post(self, request):
         """Generate a sales report for the given period"""
@@ -620,7 +621,7 @@ class SalesReportGeneratorView(APIView):
         return Response(serializer.data)
     
 class UpdateSalesMetricsView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAdmin]
     
     def post(self, request):
         from django.core.management import call_command
