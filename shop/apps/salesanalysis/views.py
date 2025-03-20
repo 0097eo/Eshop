@@ -238,7 +238,7 @@ class ProductPerformanceReportView(APIView):
                     revenue = sum(item.quantity * item.price for item in product_items)
                     
                     # Calculate average rating
-                    from products.models import ProductReview
+                    from ..products.models import ProductReview
                     reviews = ProductReview.objects.filter(product=product)
                     avg_rating = reviews.aggregate(Avg('rating'))['rating__avg'] if reviews.exists() else None
                     
