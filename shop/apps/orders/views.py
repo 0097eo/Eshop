@@ -97,7 +97,7 @@ class OrderStatusUpdateView(APIView):
     
     def put(self, request, pk):
         """Update order status and send email notification"""
-        order = get_object_or_404(Order, pk=pk, user=request.user)
+        order = get_object_or_404(Order, pk=pk)
         
         if 'status' not in request.data:
             return Response(
