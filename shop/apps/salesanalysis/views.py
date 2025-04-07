@@ -349,22 +349,24 @@ class CategoryPerformanceReportView(APIView):
                 # Get order items for products in this category on this date
                 category_items = OrderItem.objects.filter(
                     product__category=category,
-                    order__created_at__date=current_date
+                    order__created_at__date=current_date,
+                    order__status__in=['completed', 'processing']  # Only count valid orders
                 )
                 
-                if category_items.exists():
-                    products_sold = category_items.aggregate(Sum('quantity'))['quantity__sum'] or 0
-                    revenue = sum(item.quantity * item.price for item in category_items)
-                    
-                    # Create or update CategoryPerformance
-                    performance, created = CategoryPerformance.objects.update_or_create(
-                        date=current_date,
-                        category=category,
-                        defaults={
-                            'products_sold': products_sold,
-                            'revenue': revenue
-                        }
-                    )
+                # Calculate metrics even if no items exist for this category/date
+                products_sold = category_items.aggregate(Sum('quantity'))['quantity__sum'] or 0
+                revenue = sum(item.quantity * item.price for item in category_items) if category_items.exists() else 0
+                
+                # Always create the CategoryPerformance object
+                # This ensures records exist even for categories with no sales
+                performance, created = CategoryPerformance.objects.update_or_create(
+                    date=current_date,
+                    category=category,
+                    defaults={
+                        'products_sold': products_sold,
+                        'revenue': revenue
+                    }
+                )
         
         # Return the generated data
         category_performance_data = CategoryPerformance.objects.filter(
