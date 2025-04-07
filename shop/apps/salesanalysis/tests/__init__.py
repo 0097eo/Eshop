@@ -1,1 +1,2 @@
 from .test_models import DailySalesModelTest, ProductPerformanceModelTest, CategoryPerformanceModelTest, CustomerInsightModelTest, SalesReportModelTest
+from .test_views import BaseAnalyticsTestCase, DailySalesViewsTestCase, ProductPerformanceViewsTestCase, CategoryPerformanceViewsTestCase, CustomerInsightViewsTestCase, SalesReportViewsTestCase, UpdateSalesMetricsViewTestCase
