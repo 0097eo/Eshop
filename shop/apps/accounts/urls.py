@@ -2,9 +2,6 @@ from . import views
 from django.urls import path
 
 
-
-
-
 urlpatterns = [
     path('signup/', views.SignupView.as_view(), name='signup'),
     path('login/', views.LoginView.as_view(), name='login'),
@@ -14,5 +11,4 @@ urlpatterns = [
     path('request-password-reset/', views.RequestPasswordResetView.as_view(), name='request-password-reset'),
     path('reset-password/', views.ResetPasswordView.as_view(), name='reset-password'),
     path('users/', views.UserListView.as_view(), name='user-list'),
-    path('create-superuser/', views.CreateSuperuserView.as_view(), name='create-superuser-command')
 ]
