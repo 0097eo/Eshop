@@ -237,3 +237,23 @@ class UserListView(APIView):
         users = User.objects.all()  # Retrieve all users
         serializer = UserSerializer(users, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class CreateSuperuserView(APIView):
+    # No permission_classes to allow initial setup, but be careful!
+    
+    def post(self, request):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        
+        try:
+            if not User.objects.filter(username='admin').exists():
+                User.objects.create_superuser(
+                    username='admin', 
+                    email='admin@example.com', 
+                    password='your_secure_password'  # Use a strong password!
+                )
+                return Response({"message": "Superuser created successfully"}, status=status.HTTP_201_CREATED)
+            else:
+                return Response({"message": "Superuser already exists"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
