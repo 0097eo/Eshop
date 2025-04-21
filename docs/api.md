@@ -672,6 +672,472 @@ Authorization: Bearer <access_token>
 - **Constraints**: Only PENDING orders can be deleted
 - **Success Response**: `204 NO CONTENT`
 
+## Sales Analysis
+## Daily Sales
+
+### List Daily Sales
+- **URL**: `/analytics/daily-sales/`
+- **Method**: `GET`
+- **Auth Required**: Yes (Admin only)
+- **Success Response**: `200 OK`
+  ```json
+  [
+    {
+      "id": 1,
+      "date": "2025-04-20",
+      "total_sales": 2500.00,
+      "order_count": 15,
+      "average_order_value": 166.67,
+      "unique_customers": 12,
+      "new_customers": 3
+    }
+  ]
+  ```
+
+### Create Daily Sales Record
+- **URL**: `/analytics/daily-sales/`
+- **Method**: `POST`
+- **Auth Required**: Yes (Admin only)
+- **Request Body**:
+  ```json
+  {
+    "date": "2025-04-20",
+    "total_sales": 2500.00,
+    "order_count": 15,
+    "average_order_value": 166.67,
+    "unique_customers": 12,
+    "new_customers": 3
+  }
+  ```
+- **Success Response**: `201 CREATED`
+
+### View Daily Sales Details
+- **URL**: `/analytics/daily-sales/{id}/`
+- **Method**: `GET`
+- **Auth Required**: Yes (Admin only)
+- **Success Response**: `200 OK`
+  ```json
+  {
+    "id": 1,
+    "date": "2025-04-20",
+    "total_sales": 2500.00,
+    "order_count": 15,
+    "average_order_value": 166.67,
+    "unique_customers": 12,
+    "new_customers": 3
+  }
+  ```
+
+### Update Daily Sales Record
+- **URL**: `/analytics/daily-sales/{id}/`
+- **Method**: `PUT`
+- **Auth Required**: Yes (Admin only)
+- **Request Body**: Same as POST
+- **Success Response**: `200 OK`
+
+### Delete Daily Sales Record
+- **URL**: `/analytics/daily-sales/{id}/`
+- **Method**: `DELETE`
+- **Auth Required**: Yes (Admin only)
+- **Success Response**: `204 NO CONTENT`
+
+### Generate Daily Sales Report
+- **URL**: `/analytics/daily-sales/report/`
+- **Method**: `GET`
+- **Auth Required**: Yes (Admin only)
+- **Query Parameters**:
+  - `start_date`: Start date (YYYY-MM-DD)
+  - `end_date`: End date (YYYY-MM-DD)
+- **Success Response**: `200 OK`
+  ```json
+  [
+    {
+      "id": 1,
+      "date": "2025-04-20",
+      "total_sales": 2500.00,
+      "order_count": 15,
+      "average_order_value": 166.67,
+      "unique_customers": 12,
+      "new_customers": 3
+    }
+  ]
+  ```
+
+## Product Performance
+
+### List Product Performance
+- **URL**: `/analytics/product-performance/`
+- **Method**: `GET`
+- **Auth Required**: Yes (Admin only)
+- **Success Response**: `200 OK`
+  ```json
+  [
+    {
+      "id": 1,
+      "date": "2025-04-20",
+      "product": 5,
+      "units_sold": 42,
+      "revenue": 1260.00,
+      "average_rating": 4.7
+    }
+  ]
+  ```
+
+### Create Product Performance Record
+- **URL**: `/analytics/product-performance/`
+- **Method**: `POST`
+- **Auth Required**: Yes (Admin only)
+- **Request Body**:
+  ```json
+  {
+    "date": "2025-04-20",
+    "product": 5,
+    "units_sold": 42,
+    "revenue": 1260.00,
+    "average_rating": 4.7
+  }
+  ```
+- **Success Response**: `201 CREATED`
+
+### View Product Performance Details
+- **URL**: `/analytics/product-performance/{id}/`
+- **Method**: `GET`
+- **Auth Required**: Yes (Admin only)
+- **Success Response**: `200 OK`
+  ```json
+  {
+    "id": 1,
+    "date": "2025-04-20",
+    "product": 5,
+    "units_sold": 42,
+    "revenue": 1260.00,
+    "average_rating": 4.7
+  }
+  ```
+
+### Update Product Performance Record
+- **URL**: `/analytics/product-performance/{id}/`
+- **Method**: `PUT`
+- **Auth Required**: Yes (Admin only)
+- **Request Body**: Same as POST
+- **Success Response**: `200 OK`
+
+### Delete Product Performance Record
+- **URL**: `/analytics/product-performance/{id}/`
+- **Method**: `DELETE`
+- **Auth Required**: Yes (Admin only)
+- **Success Response**: `204 NO CONTENT`
+
+### Generate Product Performance Report
+- **URL**: `/analytics/product-performance/report/`
+- **Method**: `GET`
+- **Auth Required**: Yes (Admin only)
+- **Query Parameters**:
+  - `start_date`: Start date (YYYY-MM-DD)
+  - `end_date`: End date (YYYY-MM-DD)
+- **Success Response**: `200 OK`
+  ```json
+  [
+    {
+      "id": 1,
+      "date": "2025-04-20",
+      "product": 5,
+      "units_sold": 42,
+      "revenue": 1260.00,
+      "average_rating": 4.7
+    }
+  ]
+  ```
+
+## Category Performance
+
+### List Category Performance
+- **URL**: `/analytics/category-performance/`
+- **Method**: `GET`
+- **Auth Required**: Yes (Admin only)
+- **Success Response**: `200 OK`
+  ```json
+  [
+    {
+      "id": 1,
+      "date": "2025-04-20",
+      "category": 2,
+      "products_sold": 67,
+      "revenue": 3350.00
+    }
+  ]
+  ```
+
+### Create Category Performance Record
+- **URL**: `/analytics/category-performance/`
+- **Method**: `POST`
+- **Auth Required**: Yes (Admin only)
+- **Request Body**:
+  ```json
+  {
+    "date": "2025-04-20",
+    "category": 2,
+    "products_sold": 67,
+    "revenue": 3350.00
+  }
+  ```
+- **Success Response**: `201 CREATED`
+
+### View Category Performance Details
+- **URL**: `/analytics/category-performance/{id}/`
+- **Method**: `GET`
+- **Auth Required**: Yes (Admin only)
+- **Success Response**: `200 OK`
+  ```json
+  {
+    "id": 1,
+    "date": "2025-04-20",
+    "category": 2,
+    "products_sold": 67,
+    "revenue": 3350.00
+  }
+  ```
+
+### Update Category Performance Record
+- **URL**: `/analytics/category-performance/{id}/`
+- **Method**: `PUT`
+- **Auth Required**: Yes (Admin only)
+- **Request Body**: Same as POST
+- **Success Response**: `200 OK`
+
+### Delete Category Performance Record
+- **URL**: `/analytics/category-performance/{id}/`
+- **Method**: `DELETE`
+- **Auth Required**: Yes (Admin only)
+- **Success Response**: `204 NO CONTENT`
+
+### Generate Category Performance Report
+- **URL**: `/analytics/category-performance/report/`
+- **Method**: `GET`
+- **Auth Required**: Yes (Admin only)
+- **Query Parameters**:
+  - `start_date`: Start date (YYYY-MM-DD)
+  - `end_date`: End date (YYYY-MM-DD)
+- **Success Response**: `200 OK`
+  ```json
+  [
+    {
+      "id": 1,
+      "date": "2025-04-20",
+      "category": 2,
+      "products_sold": 67,
+      "revenue": 3350.00
+    }
+  ]
+  ```
+
+## Customer Insights
+
+### List Customer Insights
+- **URL**: `/analytics/customer-insights/`
+- **Method**: `GET`
+- **Auth Required**: Yes (Admin only)
+- **Success Response**: `200 OK`
+  ```json
+  [
+    {
+      "id": 1,
+      "user": 8,
+      "total_spent": 4750.00,
+      "orders_count": 12,
+      "average_order_value": 395.83,
+      "first_purchase_date": "2024-11-15",
+      "last_purchase_date": "2025-04-18",
+      "preferred_category": 3
+    }
+  ]
+  ```
+
+### Create Customer Insight Record
+- **URL**: `/analytics/customer-insights/`
+- **Method**: `POST`
+- **Auth Required**: Yes (Admin only)
+- **Request Body**:
+  ```json
+  {
+    "user": 8,
+    "total_spent": 4750.00,
+    "orders_count": 12,
+    "average_order_value": 395.83,
+    "first_purchase_date": "2024-11-15",
+    "last_purchase_date": "2025-04-18",
+    "preferred_category": 3
+  }
+  ```
+- **Success Response**: `201 CREATED`
+
+### View Customer Insight Details
+- **URL**: `/analytics/customer-insights/{id}/`
+- **Method**: `GET`
+- **Auth Required**: Yes (Admin only)
+- **Success Response**: `200 OK`
+  ```json
+  {
+    "id": 1,
+    "user": 8,
+    "total_spent": 4750.00,
+    "orders_count": 12,
+    "average_order_value": 395.83,
+    "first_purchase_date": "2024-11-15",
+    "last_purchase_date": "2025-04-18",
+    "preferred_category": 3
+  }
+  ```
+
+### Update Customer Insight Record
+- **URL**: `/analytics/customer-insights/{id}/`
+- **Method**: `PUT`
+- **Auth Required**: Yes (Admin only)
+- **Request Body**: Same as POST
+- **Success Response**: `200 OK`
+
+### Delete Customer Insight Record
+- **URL**: `/analytics/customer-insights/{id}/`
+- **Method**: `DELETE`
+- **Auth Required**: Yes (Admin only)
+- **Success Response**: `204 NO CONTENT`
+
+### Generate Customer Insights
+- **URL**: `/analytics/customer-insights/generate/`
+- **Method**: `GET`
+- **Auth Required**: Yes (Admin only)
+- **Success Response**: `200 OK`
+  ```json
+  [
+    {
+      "id": 1,
+      "user": 8,
+      "total_spent": 4750.00,
+      "orders_count": 12,
+      "average_order_value": 395.83,
+      "first_purchase_date": "2024-11-15",
+      "last_purchase_date": "2025-04-18",
+      "preferred_category": 3
+    }
+  ]
+  ```
+
+## Sales Reports
+
+### List Sales Reports
+- **URL**: `/analytics/sales-reports/`
+- **Method**: `GET`
+- **Auth Required**: Yes (Admin only)
+- **Success Response**: `200 OK`
+  ```json
+  [
+    {
+      "id": 1,
+      "report_type": "MONTHLY",
+      "start_date": "2025-03-01",
+      "end_date": "2025-03-31",
+      "generated_at": "2025-04-01T10:30:45Z",
+      "total_sales": 78500.00,
+      "total_orders": 427,
+      "average_order_value": 183.84,
+      "top_products": [1, 5, 8],
+      "top_categories": [2, 4]
+    }
+  ]
+  ```
+
+### Create Sales Report
+- **URL**: `/analytics/sales-reports/`
+- **Method**: `POST`
+- **Auth Required**: Yes (Admin only)
+- **Request Body**:
+  ```json
+  {
+    "report_type": "MONTHLY",
+    "start_date": "2025-03-01",
+    "end_date": "2025-03-31",
+    "total_sales": 78500.00,
+    "total_orders": 427,
+    "average_order_value": 183.84,
+    "top_products": [1, 5, 8],
+    "top_categories": [2, 4]
+  }
+  ```
+- **Success Response**: `201 CREATED`
+
+### View Sales Report Details
+- **URL**: `/analytics/sales-reports/{id}/`
+- **Method**: `GET`
+- **Auth Required**: Yes (Admin only)
+- **Success Response**: `200 OK`
+  ```json
+  {
+    "id": 1,
+    "report_type": "MONTHLY",
+    "start_date": "2025-03-01",
+    "end_date": "2025-03-31",
+    "generated_at": "2025-04-01T10:30:45Z",
+    "total_sales": 78500.00,
+    "total_orders": 427,
+    "average_order_value": 183.84,
+    "top_products": [1, 5, 8],
+    "top_categories": [2, 4]
+  }
+  ```
+
+### Update Sales Report
+- **URL**: `/analytics/sales-reports/{id}/`
+- **Method**: `PUT`
+- **Auth Required**: Yes (Admin only)
+- **Request Body**: Same as POST
+- **Success Response**: `200 OK`
+
+### Delete Sales Report
+- **URL**: `/analytics/sales-reports/{id}/`
+- **Method**: `DELETE`
+- **Auth Required**: Yes (Admin only)
+- **Success Response**: `204 NO CONTENT`
+
+### Generate Sales Report
+- **URL**: `/analytics/sales-reports/generate/`
+- **Method**: `POST`
+- **Auth Required**: Yes (Admin only)
+- **Request Body**:
+  ```json
+  {
+    "report_type": "MONTHLY",
+    "start_date": "2025-03-01",
+    "end_date": "2025-03-31"
+  }
+  ```
+- **Success Response**: `200 OK`
+  ```json
+  {
+    "id": 1,
+    "report_type": "MONTHLY",
+    "start_date": "2025-03-01",
+    "end_date": "2025-03-31",
+    "generated_at": "2025-04-21T14:52:20Z",
+    "total_sales": 78500.00,
+    "total_orders": 427,
+    "average_order_value": 183.84,
+    "top_products": [1, 5, 8],
+    "top_categories": [2, 4]
+  }
+  ```
+
+## Update Sales Metrics
+
+### Trigger Sales Metrics Update
+- **URL**: `/analytics/update-metrics/`
+- **Method**: `POST`
+- **Auth Required**: Yes (Admin only)
+- **Success Response**: `200 OK`
+  ```json
+  {
+    "message": "Sales metrics update triggered successfully"
+  }
+  ```
 
 
 ## Error Responses
