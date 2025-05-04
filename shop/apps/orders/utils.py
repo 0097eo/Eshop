@@ -12,8 +12,8 @@ def send_order_confirmation_email(order):
     context = {
         'order': order,
         'order_items': order.items.all(),
-        'company_name': 'Eshop',
-        'support_email': 'support@eshop.com',
+        'company_name': 'Ideal Furniture & Decor',
+        'support_email': 'support@IdealFurniture&Decor.com',
         'currency': 'Ksh'
     }
     
@@ -48,8 +48,8 @@ def send_order_status_update_email(order):
     context = {
         'order': order,
         'status_display': status_display,
-        'company_name': 'Eshop',
-        'support_email': 'support@eshop.com',
+        'company_name': 'Ideal Furniture & Decor',
+        'support_email': 'support@IdealFurniture&Decor.com',
         'currency': 'Ksh'
     }
     
@@ -81,8 +81,8 @@ def send_shipping_confirmation_email(order, tracking_number=None):
     context = {
         'order': order,
         'tracking_number': tracking_number,
-        'company_name': 'Eshop',
-        'support_email': 'support@eshop.com',
+        'company_name': 'Ideal Furniture & Decor',
+        'support_email': 'support@IdealFurniture&Decor.com',
         'tracking_url': 'https://track.yourcompany.com' if tracking_number else None
     }
     
@@ -113,8 +113,8 @@ def send_order_address_update_email(order, old_address=None):
     context = {
         'order': order,
         'old_address': old_address,
-        'company_name': 'Eshop',
-        'support_email': 'support@eshop.com',
+        'company_name': 'Ideal Furniture & Decor',
+        'support_email': 'support@IdealFurniture&Decor.com',
         'currency': 'Ksh'
     }
     
@@ -151,8 +151,8 @@ def send_order_cancellation_email(order):
     context = {
         'order': order,
         'order_items': order.items.all(),
-        'company_name': 'Eshop',
-        'support_email': 'support@eshop.com',
+        'company_name': 'Ideal Furniture & Decor',
+        'support_email': 'support@IdealFurniture&Decor.com',
         'currency': 'Ksh',
         'cancellation_date': datetime.now()
     }

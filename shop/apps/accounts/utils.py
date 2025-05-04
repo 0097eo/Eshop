@@ -10,8 +10,8 @@ def send_verification_email(email, verification_code):
     # HTML version of the email
     html_message = render_to_string('emails/verification_email.html', {
         'verification_code': verification_code,
-        'company_name': 'Eshop',
-        'support_email': 'support@eshop.com',
+        'company_name': 'Ideal Furniture & Decor',
+        'support_email': 'support@IdealFurniture&Decor.com',
     })
     
     # Plain text version of the email
@@ -31,13 +31,13 @@ def send_verification_email(email, verification_code):
 
 
 def send_password_reset_email(email, reset_token):
-    subject = "Eshop: Password Reset Request"
+    subject = "Ideal Furniture & Decor: Password Reset Request"
     
     # HTML version of the email
     html_message = render_to_string('emails/password_reset_email.html', {
         'reset_token': reset_token,
-        'company_name': 'Eshop',
-        'support_email': 'support@eshop.com',
+        'company_name': 'Ideal Furniture & Decor',
+        'support_email': 'support@IdealFurniture&Decor.com',
     })
     
     # Plain text version of the email
