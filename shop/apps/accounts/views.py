@@ -65,8 +65,14 @@ class VerifyEmailView(APIView):
             user.verification_code = None
             user.save()
 
+            refresh = RefreshToken.for_user(user)
+            serializer = UserSerializer(user)
+
             return Response({
-                'message': 'Email verified successfully.'
+                'message': 'Email verified successfully.',
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+                'user': serializer.data
                 }, status=status.HTTP_200_OK)
         
         except User.DoesNotExist:
