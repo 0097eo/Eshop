@@ -129,25 +129,24 @@ class OrderStatusUpdateView(APIView):
     
 class OrderDeleteView(APIView):
     permission_classes = [IsAuthenticated]
-    
+
     def delete(self, request, pk):
-        """Delete an order (only if it's in PENDING status), admins can delete any order"""
+        """Cancel an order (only if it's in PENDING status), admins can cancel any order"""
         if IsAdmin().has_permission(request, self):
             order = get_object_or_404(Order, pk=pk)
         else:
             order = get_object_or_404(Order, pk=pk, user=request.user)
-        
+
         if order.status != 'PENDING':
             return Response(
-                {'error': 'Can only delete pending orders'},
+                {'error': 'Can only cancel orders with PENDING status'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
+        order.status = 'CANCELLED'
+        order.save()
+
         email_sent = send_order_cancellation_email(order)
-        
-        # Delete the order
-        order.delete()
-        
         # Return appropriate response
         if email_sent:
             return Response(
