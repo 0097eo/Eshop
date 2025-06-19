@@ -3,10 +3,12 @@ import requests
 import base64
 import datetime
 import json
+import logging
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.shortcuts import get_object_or_404
+from django.db import transaction
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
@@ -15,55 +17,47 @@ from ..accounts.permissions import IsCustomer
 from ..orders.models import Order
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
+logger = logging.getLogger(__name__)
 
 class StripePaymentView(APIView):
     permission_classes = [IsCustomer]
+
     def post(self, request):
         order_id = request.data.get("order_id")
+        if not order_id:
+            return Response({"error": "order_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
         user = request.user
 
-        # First check if order exists
-        try:
-            order = Order.objects.get(id=order_id)
-        except Order.DoesNotExist:
+        # 1. Get the order, ensuring it belongs to the user
+        order = get_object_or_404(Order, id=order_id, user=user)
+
+        # 2. Check if the order is in the correct state to be paid for
+        if order.status != 'PENDING':
             return Response(
-                {"error": f"Order with ID {order_id} does not exist"},
-                status=status.HTTP_404_NOT_FOUND
+                {"error": f"This order cannot be paid for. Its status is '{order.status}'."},
+                status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Then check if order belongs to user
-        if order.user != user:
+        # 3. Check if a payment has already been initiated to prevent duplicates
+        if Payment.objects.filter(order=order, status='pending').exists():
             return Response(
-                {"error": "This order belongs to another user"},
-                status=status.HTTP_403_FORBIDDEN
+                {"error": "A payment process has already been initiated for this order."},
+                status=status.HTTP_409_CONFLICT
             )
 
         amount = float(order.total_price)
 
         try:
-            # Check for existing pending payment
-            existing_payment = Payment.objects.filter(
-                order=order,
-                status='pending'
-            ).first()
-
-            if existing_payment:
-                return Response({
-                    "error": "Payment already initiated for this order",
-                    "payment_id": existing_payment.transaction_id
-                }, status=status.HTTP_400_BAD_REQUEST)
-
             intent = stripe.PaymentIntent.create(
-                amount=int(amount * 100),
+                amount=int(amount * 100), # Amount in cents
                 currency="kes",
                 payment_method_types=["card"],
-                metadata={
-                    'order_id': order_id,
-                    'user_id': str(user.id)
-                }
+                metadata={'order_id': order.id} # Securely link the intent to our order
             )
 
-            payment = Payment.objects.create(
+            # Create our internal payment record
+            Payment.objects.create(
                 user=user,
                 order=order,
                 amount=amount,
@@ -72,55 +66,59 @@ class StripePaymentView(APIView):
                 status="pending",
             )
 
-            return Response({"client_secret": intent.client_secret, "amount": amount}, status=status.HTTP_200_OK)
+            return Response({
+                "client_secret": intent.client_secret,
+                "amount": amount
+            }, status=status.HTTP_200_OK)
 
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            logger.error(f"Stripe Payment Intent creation failed for order {order_id}: {e}")
+            return Response({"error": "An error occurred while communicating with Stripe."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 @csrf_exempt
 def stripe_webhook(request):
     payload = request.body
     sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
-
+    
     try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
-        )
+        event = stripe.Webhook.construct_event(payload, sig_header, settings.STRIPE_WEBHOOK_SECRET)
+    except (ValueError, stripe.error.SignatureVerificationError) as e:
+        logger.warning(f"Stripe webhook signature/payload error: {e}")
+        return JsonResponse({'error': 'Invalid payload or signature'}, status=400)
 
-        if event.type == 'payment_intent.succeeded':
-            payment_intent = event.data.object
-            order_id = payment_intent.metadata.get('order_id')
-            user_id = payment_intent.metadata.get('user_id')
-            
-            if order_id and user_id:
-                try:
-                    # Verify order belongs to correct user and is in valid state
-                    order = Order.objects.get(
-                        id=order_id,
-                        user_id=user_id,
-                        status='pending'
-                    )
-                    
-                    order.status = 'delivered'
-                    order.save()
+    if event['type'] == 'payment_intent.succeeded':
+        payment_intent = event['data']['object']
+        transaction_id = payment_intent.id
+        
+        try:
+            # Use the transaction_id from the intent to find our pending payment
+            with transaction.atomic():
+                payment = Payment.objects.select_for_update().get(transaction_id=transaction_id, status='pending')
+                order = payment.order
+                
+                # Idempotency check: if order is no longer pending, we've likely processed it already.
+                if order.status != 'PENDING':
+                    logger.info(f"Stripe webhook for already processed order {order.id} received.")
+                    return JsonResponse({'status': 'success', 'message': 'Order already processed'})
 
-                    # Update payment status
-                    payment = Payment.objects.get(
-                        transaction_id=payment_intent.id,
-                        order_id=order_id
-                    )
-                    payment.status = 'completed'
-                    payment.save()
+                # Update statuses
+                payment.status = 'completed'
+                order.status = 'PROCESSING' # Update order status to show it's paid
+                
+                payment.save()
+                order.save()
 
-                except Order.DoesNotExist:
-                    return JsonResponse({'error': 'Invalid order'}, status=400)
-                except Payment.DoesNotExist:
-                    return JsonResponse({'error': 'Invalid payment'}, status=400)
+                # You can send a "payment received" email here
+                # send_payment_confirmation_email(order)
 
-        return JsonResponse({'status': 'success'})
+        except Payment.DoesNotExist:
+            logger.error(f"Stripe webhook: Payment with transaction_id {transaction_id} not found.")
+            return JsonResponse({'error': 'Payment record not found'}, status=404)
+        except Exception as e:
+            logger.error(f"Error processing Stripe webhook for {transaction_id}: {e}")
+            return JsonResponse({'error': 'Internal server error'}, status=500)
 
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=400)
+    return JsonResponse({'status': 'success'})
 
 class MpesaPaymentView(APIView):
     permission_classes = [IsCustomer]
@@ -132,39 +130,24 @@ class MpesaPaymentView(APIView):
 
     def post(self, request):
         order_id = request.data.get("order_id")
-        if not order_id:
-            return Response({"error": "order_id is required"}, status=status.HTTP_400_BAD_REQUEST)
-
         phone = request.data.get("phone")
+        if not all([order_id, phone]):
+            return Response({"error": "order_id and phone are required"}, status=status.HTTP_400_BAD_REQUEST)
+
         user = request.user
+        order = get_object_or_404(Order, id=order_id, user=user)
 
-        # First check if order exists
-        try:
-            order = Order.objects.get(id=order_id)
-        except Order.DoesNotExist:
+        if order.status != 'PENDING':
             return Response(
-                {"error": f"Order with ID {order_id} does not exist"},
-                status=status.HTTP_404_NOT_FOUND
+                {"error": f"This order cannot be paid for. Its status is '{order.status}'."},
+                status=status.HTTP_400_BAD_REQUEST
             )
-
-        # Then check if order belongs to user
-        if order.user != user:
+        
+        if Payment.objects.filter(order=order, status='pending').exists():
             return Response(
-                {"error": "This order belongs to another user"},
-                status=status.HTTP_403_FORBIDDEN
+                {"error": "A payment process has already been initiated for this order."},
+                status=status.HTTP_409_CONFLICT
             )
-
-        # Check for existing pending payment
-        existing_payment = Payment.objects.filter(
-            order=order,
-            status='pending'
-        ).first()
-
-        if existing_payment:
-            return Response({
-                "error": "Payment already initiated for this order",
-                "payment_id": existing_payment.transaction_id
-            }, status=status.HTTP_400_BAD_REQUEST)
 
         amount = float(order.total_price)
 
@@ -184,7 +167,7 @@ class MpesaPaymentView(APIView):
             "PartyA": phone,
             "PartyB": settings.MPESA_SHORTCODE,
             "PhoneNumber": phone,
-            "CallBackURL": "https://callback-url.com/mpesa/callback",
+            "CallBackURL": "https://a203-105-163-0-243.ngrok-free.app/payments/mpesa/callback/",
             "AccountReference": f"Order_{order_id}",
             "TransactionDesc": f"Payment for order {order_id}",
         }
@@ -195,7 +178,7 @@ class MpesaPaymentView(APIView):
 
         if response.status_code == 200:
             data = response.json()
-            transaction_id = data.get("CheckoutRequestID", "N/A")
+            checkout_request_id = data.get("CheckoutRequestID")
 
             # Create Payment record
             Payment.objects.create(
@@ -203,87 +186,51 @@ class MpesaPaymentView(APIView):
                 order=order,
                 amount=amount,
                 payment_method="mpesa",
-                transaction_id=transaction_id,
+                mpesa_checkout_id=checkout_request_id,
                 status="pending",
             )
 
-            return Response({"message": "Payment initiated", "transaction_id": transaction_id, "amount": amount}, status=status.HTTP_200_OK)
+            return Response({"message": "Payment initiated", "checkout_request_id": checkout_request_id}, status=status.HTTP_200_OK)
 
         return Response({"error": "Failed to initiate payment"}, status=status.HTTP_400_BAD_REQUEST)
     
 @csrf_exempt
 def mpesa_callback(request):
+    
     if request.method == "POST":
         try:
-            mpesa_response = json.loads(request.body.decode("utf-8"))
+            data = json.loads(request.body)
+            stk_callback = data.get("Body", {}).get("stkCallback", {})
+            checkout_request_id = stk_callback.get("CheckoutRequestID")
 
-            body = mpesa_response.get("Body", {})
-            stk_callback = body.get("stkCallback", {})
-            result_code = stk_callback.get("ResultCode", "")
-            result_desc = stk_callback.get("ResultDesc", "")
-            checkout_request_id = stk_callback.get("CheckoutRequestID", "")
+            with transaction.atomic():
+                payment = Payment.objects.select_for_update().get(mpesa_checkout_id=checkout_request_id, status='pending')
+                order = payment.order
 
-            if result_code == 0:
-                callback_metadata = stk_callback.get("CallbackMetadata", {}).get("Item", [])
+                if stk_callback.get("ResultCode") == 0:
+                    if order.status != 'PENDING':
+                        logger.info(f"M-Pesa callback for already processed order {order.id} received.")
+                        return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
+                    metadata = stk_callback.get("CallbackMetadata", {}).get("Item", [])
+                    receipt_number = next((item['Value'] for item in metadata if item['Name'] == 'MpesaReceiptNumber'), None)
 
-                transaction_id = ""
-                amount = 0
-                phone_number = ""
+                    payment.status = 'completed'
+                    payment.transaction_id = receipt_number # This is the final transaction ID
+                    order.status = 'PROCESSING'
                 
-                for item in callback_metadata:
-                    name = item.get("Name")
-                    if name == "MpesaReceiptNumber":
-                        transaction_id = item.get("Value", "")
-                    elif name == "Amount":
-                        amount = item.get("Value", 0)
-                    elif name == "PhoneNumber":
-                        phone_number = item.get("Value", "")
-
-                try:
-                    # Find the payment record and verify order status
-                    payment = Payment.objects.get(
-                        transaction_id=checkout_request_id,
-                        status='pending'
-                    )
-                    order = payment.order
-
-                    # Verify order is still in pending state
-                    if order.status != 'pending':
-                        return JsonResponse({
-                            "error": "Order already processed"
-                        }, status=400)
-
-                    # Update order status
-                    order.status = 'delivered'
+                    payment.save()
                     order.save()
-
-                    # Update payment status
-                    payment.status = "completed"
-                    payment.transaction_id = transaction_id
+                else:
+                    payment.status = 'failed'
+                    payment.extra_data = {'error_message': stk_callback.get('ResultDesc')}
                     payment.save()
 
-                    return JsonResponse({
-                        "message": "Payment successful",
-                        "transaction_id": transaction_id
-                    }, status=200)
-
-                except Payment.DoesNotExist:
-                    return JsonResponse({
-                        "error": "Invalid payment record"
-                    }, status=400)
-                except Order.DoesNotExist:
-                    return JsonResponse({
-                        "error": "Invalid order"
-                    }, status=400)
-
-            else:
-                # Failed transaction
-                return JsonResponse({
-                    "message": "Payment failed",
-                    "error": result_desc
-                }, status=400)
-
+            return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
+        
+        except Payment.DoesNotExist:
+            logger.warning(f"M-Pesa callback for unknown CheckoutRequestID: {checkout_request_id}")
+            return JsonResponse({"ResultCode": 1, "ResultDesc": "No matching transaction found"})
+        
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
-
-    return JsonResponse({"message": "Invalid request"}, status=400)
+            logger.error(f"M-Pesa callback internal error: {e}")
+            return JsonResponse({"ResultCode": 1, "ResultDesc": "Internal Server Error"}, status=500)
