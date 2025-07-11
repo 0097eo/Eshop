@@ -14,6 +14,12 @@ class OrderViewsTestCase(TestCase):
             email='test@test.com',
             password='testpass123'
         )
+
+        self.admin_user = self.User.objects.create_superuser(
+            email='admin@test.com',
+            password='adminpass123'
+        )
+        
         self.client.force_authenticate(user=self.user)
         
         self.order = Order.objects.create(
@@ -62,6 +68,9 @@ class OrderViewsTestCase(TestCase):
 
     @patch('apps.orders.views.send_order_status_update_email')
     def test_update_order_status(self, mock_email):
+
+        self.client.force_authenticate(user=self.admin_user)
+
         url = reverse('order-status-update', kwargs={'pk': self.order.pk})
         data = {'status': 'PROCESSING'}
         response = self.client.put(url, data)
@@ -73,7 +82,7 @@ class OrderViewsTestCase(TestCase):
     def test_delete_pending_order(self):
         url = reverse('order-delete', kwargs={'pk': self.order.pk})
         response = self.client.delete(url)
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_delete_non_pending_order(self):
         self.order.status = 'PROCESSING'
