@@ -19,6 +19,7 @@ python-dotenv = "*"
 psycopg2-binary = "*"
 dj-database-url = "*"
 gunicorn = "*"
+flake8 = "*"
 
 [dev-packages]
 
