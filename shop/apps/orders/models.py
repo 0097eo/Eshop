@@ -1,78 +1,66 @@
-from decimal import Decimal
-from django.test import TestCase
-from django.contrib.auth import get_user_model
-from apps.products.models import Product
-from ..models import Order, OrderItem
+from django.db import models
+from django.conf import settings
+from django.core.validators import MaxValueValidator
 
-class OrderModelTests(TestCase):
-    def setUp(self):
-        self.user = get_user_model().objects.create_user(
-            email='testuser@example.com', password='password123'
-        )
-        self.product = Product.objects.create(
-            name='Test Product', price=Decimal('10.00')
-        )
-        self.order = Order.objects.create(
-            id = 1,
-            user=self.user,
-            shipping_address='123 Test Street',
-            billing_address='456 Billing Street',
-            total_price=Decimal('0.00')
-        )
-        self.order_item = OrderItem.objects.create(
-            order=self.order,
-            product=self.product,
-            quantity=2,
-            price=self.product.price
-        )
+class Order(models.Model):
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('PROCESSING', 'Processing'),
+        ('SHIPPED', 'Shipped'),
+        ('DELIVERED', 'Delivered'),
+        ('CANCELLED', 'Cancelled'),
+    ]
 
-    def test_order_creation(self):
-        self.assertEqual(self.order.user, self.user)
-        self.assertEqual(self.order.status, 'PENDING')
-        self.assertEqual(self.order.shipping_address, '123 Test Street')
-        self.assertEqual(self.order.billing_address, '456 Billing Street')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='orders',
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='PENDING',
+    )
+    shipping_address = models.TextField()
+    billing_address = models.TextField(null=True, blank=True)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-    def test_order_total_price_calculation(self):
-        expected_total = self.order_item.get_subtotal()
-        self.assertEqual(self.order.get_total_price(), expected_total)
+    class Meta:
+        ordering = ['-created_at']
 
-    def test_order_str_representation(self):
-        self.assertEqual(str(self.order), f'Order {self.order.id} by {self.user.email}')
+    def get_total_price(self):
+        return sum(item.get_subtotal() for item in self.items.all())
+    
+    def save(self, *args, **kwargs):
+        if not self.total_price:
+            self.total_price = self.get_total_price()
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f'Order {self.id} by {self.user.email}'
 
-    def test_order_save_updates_total_price(self):
-        self.order.save()
-        self.assertEqual(self.order.total_price, self.order.get_total_price())
+class OrderItem(models.Model):
+    order = models.ForeignKey(
+        Order, 
+        on_delete=models.CASCADE, 
+        related_name='items'
+    )
+    product = models.ForeignKey(
+        'products.Product', 
+        on_delete=models.PROTECT, 
+        related_name='order_items'
+    )
+    quantity = models.PositiveIntegerField(default=1, validators=[MaxValueValidator(100)])
+    price = models.DecimalField(  # Store price at time of purchase
+        max_digits=10,
+        decimal_places=2,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
 
-class OrderItemModelTests(TestCase):
-    def setUp(self):
-        self.user = get_user_model().objects.create_user(
-            email='testuser@example.com', password='password123'
-        )
-        self.product = Product.objects.create(
-            name='Test Product', price=Decimal('10.00')
-        )
-        self.order = Order.objects.create(
-            id = 1,
-            user=self.user,
-            shipping_address='123 Test Street',
-            total_price=Decimal('0.00')
-        )
-        self.order_item = OrderItem.objects.create(
-            order=self.order,
-            product=self.product,
-            quantity=3,
-            price=self.product.price
-        )
-
-    def test_order_item_creation(self):
-        self.assertEqual(self.order_item.order, self.order)
-        self.assertEqual(self.order_item.product, self.product)
-        self.assertEqual(self.order_item.quantity, 3)
-        self.assertEqual(self.order_item.price, Decimal('10.00'))
-
-    def test_order_item_subtotal(self):
-        expected_subtotal = Decimal('30.00')  # 3 * 10.00
-        self.assertEqual(self.order_item.get_subtotal(), expected_subtotal)
-
-    def test_order_item_str_representation(self):
-        self.assertEqual(str(self.order_item), f'3x {self.product.name} in order {self.order.id}')
+    def get_subtotal(self):
+        return self.price * self.quantity
+    
+    def __str__(self):
+        return f"{self.quantity}x {self.product.name} in order {self.order.id}"
