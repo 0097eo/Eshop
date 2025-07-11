@@ -243,4 +243,3 @@ class UserListView(APIView):
         users = User.objects.all()  # Retrieve all users
         serializer = UserSerializer(users, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
