@@ -1,4 +1,4 @@
-# 🛒 E-Shop API
+# E-Shop API
 
 A robust Django REST Framework backend for a modern e-commerce platform with comprehensive product management, user authentication, order processing, payment integration, and sales analytics.
 
@@ -8,7 +8,7 @@ A robust Django REST Framework backend for a modern e-commerce platform with com
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-blue)
 ![Python](https://img.shields.io/badge/Python-3.12-yellow)
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Overview](#overview)
 - [Features](#features)
@@ -22,11 +22,11 @@ A robust Django REST Framework backend for a modern e-commerce platform with com
 - [Contributing](#contributing)
 - [License](#license)
 
-## 🔍 Overview
+## Overview
 
 This Django-powered RESTful API serves as the backend for a feature-rich e-commerce platform. It provides secure endpoints for user management, product catalog operations, order processing, payment handling, and sales analytics.
 
-## ✨ Features
+## Features
 
 - **User Authentication & Authorization** - JWT-based secure authentication
 - **Product Management** - Comprehensive catalog with categories, reviews, and images
@@ -36,7 +36,7 @@ This Django-powered RESTful API serves as the backend for a feature-rich e-comme
 - **Cloud Storage** - Cloudinary integration for media files
 - **CORS Support** - Configured for cross-origin requests
 
-## 💻 Tech Stack
+## Tech Stack
 
 - **[Django](https://www.djangoproject.com/)** - High-level Python web framework
 - **[Django REST Framework](https://www.django-rest-framework.org/)** - Toolkit for building Web APIs
@@ -46,42 +46,42 @@ This Django-powered RESTful API serves as the backend for a feature-rich e-comme
 - **[Cloudinary](https://cloudinary.com/)** - Cloud-based image and video management
 - **[Gunicorn](https://gunicorn.org/)** - WSGI HTTP Server for UNIX
 
-## 🏗️ API Structure
+## API Structure
 
 The API is organized into the following Django apps:
 
-### 👤 Accounts
+### Accounts
 - User registration, authentication, and profile management
 - Permission-based access control
 - Password reset functionality
 - Social authentication options
 
-### 📦 Products
+### Products
 - Product catalog with categories and subcategories
 - Product images, details, and specifications
 - Inventory management
 - Review and rating system
 - Search, filter, and sorting capabilities
 
-### 🛒 Orders
+### Orders
 - Shopping cart functionality
 - Order creation and management
 - Order status tracking
 - Shipping and delivery options
 
-### 💳 Payments
+### Payments
 - Secure payment processing via Stripe
 - Multiple payment methods
 - Invoice generation
 - Refund processing
 
-### 📊 Sales Analysis
+### Sales Analysis
 - Sales reports and statistics
 - Revenue tracking
 - Product performance metrics
 - Customer behavior analysis
 
-## 🚀 Installation
+## Installation
 
 1. **Clone the repository**
    ```bash
@@ -115,7 +115,7 @@ The API is organized into the following Django apps:
    python manage.py createsuperuser
    ```
 
-## 🔐 Environment Variables
+## Environment Variables
 
 Create a `.env` file in the root directory with the following variables:
 
@@ -139,7 +139,7 @@ STRIPE_SECRET_KEY=your_stripe_secret_key
 STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
 ```
 
-## ▶️ Running the Project
+## Running the Project
 
 1. **Start the development server**
    ```bash
@@ -150,7 +150,7 @@ STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
    - Main API: http://127.0.0.1:8000/api/
    - Admin interface: http://127.0.0.1:8000/admin/
 
-## 📚 API Documentation
+## API Documentation
 
 ### Authentication Endpoints
 
@@ -201,7 +201,7 @@ GET    /api/analytics/customers/     # Customer analytics
 
 For detailed API documentation with request/response examples, navigate to the docs directory:
 
-## 🌐 Deployment
+## Deployment
 
 ### Preparing for Production
 
@@ -236,7 +236,7 @@ For detailed API documentation with request/response examples, navigate to the d
    gunicorn eshop.wsgi:application
    ```
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -244,10 +244,10 @@ For detailed API documentation with request/response examples, navigate to the d
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License.
 
 ---
 
-Built with ❤️ using Django and DRF
+Built using Django and DRF
