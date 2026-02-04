@@ -2,6 +2,7 @@
 
 from django.db import migrations
 from django.conf import settings
+from django.contrib.auth.hashers import make_password
 import os
 
 def create_superuser(apps, schema_editor):
@@ -17,9 +18,10 @@ def create_superuser(apps, schema_editor):
     
     # Only create if password is provided and user doesn't exist
     if password and not User.objects.filter(email=email).exists():
-        # Manually create superuser (can't use create_superuser in migrations)
-        user = User.objects.create(
+        # Create superuser with hashed password
+        User.objects.create(
             email=email,
+            password=make_password(password),  # Hash the password
             first_name=first_name,
             last_name=last_name,
             is_staff=True,
@@ -27,9 +29,6 @@ def create_superuser(apps, schema_editor):
             is_active=True,
             is_verified=True,
         )
-        # Set password properly (hashed)
-        user.set_password(password)
-        user.save()
         print(f"Superuser '{email}' created successfully")
     elif not password:
         print("DJANGO_SUPERUSER_PASSWORD not set - skipping superuser creation")
