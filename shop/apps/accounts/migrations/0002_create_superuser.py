@@ -26,6 +26,7 @@ def create_superuser(apps, schema_editor):
             last_name=last_name,
             is_staff=True,
             is_superuser=True,
+            user_type='ADMIN',
             is_active=True,
             is_verified=True,
         )
