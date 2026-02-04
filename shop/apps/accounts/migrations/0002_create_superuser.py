@@ -17,12 +17,19 @@ def create_superuser(apps, schema_editor):
     
     # Only create if password is provided and user doesn't exist
     if password and not User.objects.filter(email=email).exists():
-        User.objects.create_superuser(
+        # Manually create superuser (can't use create_superuser in migrations)
+        user = User.objects.create(
             email=email,
-            password=password,
             first_name=first_name,
             last_name=last_name,
+            is_staff=True,
+            is_superuser=True,
+            is_active=True,
+            is_verified=True,
         )
+        # Set password properly (hashed)
+        user.set_password(password)
+        user.save()
         print(f"Superuser '{email}' created successfully")
     elif not password:
         print("DJANGO_SUPERUSER_PASSWORD not set - skipping superuser creation")
