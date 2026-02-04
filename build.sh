@@ -6,7 +6,7 @@ set -o errexit
 pip install -r requirements.txt
 
 # Collect static files
-python manage.py collectstatic --no-input
+python shop/manage.py collectstatic --no-input
 
-# Run migrations
-python manage.py migrate
+# Run migrations 
+python shop/manage.py migrate
