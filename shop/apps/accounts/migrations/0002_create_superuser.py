@@ -1,36 +1,46 @@
+# accounts/migrations/0002_create_superuser.py
+
 from django.db import migrations
 from django.conf import settings
 import os
 
 def create_superuser(apps, schema_editor):
+    """
+    Create superuser from environment variables during migration
+    """
     User = apps.get_model(settings.AUTH_USER_MODEL)
     
-    username = os.environ.get('DJANGO_SUPERUSER_USERNAME', 'admin')
     email = os.environ.get('DJANGO_SUPERUSER_EMAIL', 'admin@example.com')
     password = os.environ.get('DJANGO_SUPERUSER_PASSWORD')
+    first_name = os.environ.get('DJANGO_SUPERUSER_FIRST_NAME', 'Admin')
+    last_name = os.environ.get('DJANGO_SUPERUSER_LAST_NAME', 'User')
     
     # Only create if password is provided and user doesn't exist
-    if password and not User.objects.filter(username=username).exists():
+    if password and not User.objects.filter(email=email).exists():
         User.objects.create_superuser(
-            username=username,
             email=email,
-            password=password
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
         )
-        print(f"Superuser '{username}' created successfully")
+        print(f"Superuser '{email}' created successfully")
     elif not password:
         print("DJANGO_SUPERUSER_PASSWORD not set - skipping superuser creation")
     else:
-        print(f"Superuser '{username}' already exists - skipping")
+        print(f"Superuser '{email}' already exists - skipping")
 
 def reverse_func(apps, schema_editor):
+    """
+    Optional: Delete the superuser when migration is reversed
+    """
     User = apps.get_model(settings.AUTH_USER_MODEL)
-    username = os.environ.get('DJANGO_SUPERUSER_USERNAME', 'admin')
-    User.objects.filter(username=username).delete()
+    email = os.environ.get('DJANGO_SUPERUSER_EMAIL', 'admin@example.com')
+    User.objects.filter(email=email).delete()
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('accounts', '0001_initial'), 
+        ('accounts', '0001_initial'),  # Adjust to your last migration
     ]
 
     operations = [
